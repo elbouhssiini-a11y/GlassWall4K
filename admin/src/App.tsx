@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import type { User } from 'firebase/auth'
 import { SettingsPanel } from './components/SettingsPanel'
+import { Toast } from './components/Toast'
 import { WallpaperForm } from './components/WallpaperForm'
 import { WallpaperList } from './components/WallpaperList'
-import { FOUR_K_CATEGORY, IOS_CATEGORY, matchesCategory } from './lib/categories'
+import { FOUR_K_CATEGORY, IOS_CATEGORY } from './lib/categories'
 import {
   isAdminUser,
   listWallpapers,
@@ -39,12 +40,6 @@ export default function App() {
 
   const authed = isAdminUser(user)
 
-  const stats = useMemo(() => {
-    const ios = items.filter((item) => matchesCategory(item.category, IOS_CATEGORY.name)).length
-    const fourK = items.filter((item) => item.category === FOUR_K_CATEGORY.name).length
-    return { ios, fourK, total: ios + fourK }
-  }, [items])
-
   const pageMeta = useMemo(() => {
     switch (tab) {
       case 'home':
@@ -52,38 +47,33 @@ export default function App() {
           kicker: 'Library',
           title: 'All Wallpapers',
           subtitle: 'Every wallpaper across iOS 27 Wallpapers and 4K Wallpapers.',
-          status: `${stats.total} items`,
         }
       case 'ios':
         return {
           kicker: 'Catalog',
           title: 'iOS 27 Wallpapers',
           subtitle: 'Drag to reorder. Changes save automatically.',
-          status: `${stats.ios} items`,
         }
       case 'fourK':
         return {
           kicker: 'Catalog',
           title: '4K Wallpapers',
           subtitle: 'Drag to reorder. Changes save automatically.',
-          status: `${stats.fourK} items`,
         }
       case 'upload':
         return {
           kicker: 'Publishing',
           title: 'Upload',
           subtitle: 'Pick a catalog, drop images, publish.',
-          status: 'Ready',
         }
       case 'settings':
         return {
           kicker: 'Configuration',
           title: 'Settings',
           subtitle: 'AdMob and app configuration.',
-          status: 'Live',
         }
     }
-  }, [tab, stats.ios, stats.fourK, stats.total])
+  }, [tab])
 
   useEffect(() => {
     return watchAuth((next) => {
@@ -161,7 +151,7 @@ export default function App() {
   if (!authReady) {
     return (
       <div className="shell--gate">
-        <p className="banner banner--loading">Checking auth…</p>
+        <Toast message="Checking auth…" variant="loading" />
       </div>
     )
   }
@@ -197,7 +187,7 @@ export default function App() {
             />
           </label>
 
-          {bootError ? <p className="banner banner--error">{bootError}</p> : null}
+          {bootError ? <Toast message={bootError} variant="error" /> : null}
 
           <button className="primary-btn" type="submit" disabled={busyAuth}>
             {busyAuth ? 'Signing in…' : 'Sign in'}
@@ -283,12 +273,11 @@ export default function App() {
                   Upload
                 </button>
               ) : null}
-              <div className="admin-page-status">{pageMeta.status}</div>
             </div>
           </header>
 
-          {bootError ? <p className="banner banner--error">{bootError}</p> : null}
-          {loading ? <p className="banner banner--loading">Loading…</p> : null}
+          {bootError ? <Toast message={bootError} variant="error" /> : null}
+          {loading ? <Toast message="Loading…" variant="loading" /> : null}
 
           {tab === 'home' ? (
             <WallpaperList

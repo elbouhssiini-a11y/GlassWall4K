@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Toast, useToast } from './Toast'
 import { loadAppSettings, saveAppSettings } from '../lib/firebase'
 import {
   DEFAULT_APP_SETTINGS,
@@ -11,11 +12,10 @@ export function SettingsPanel() {
   const [settings, setSettings] = useState<AppSettings>({ ...DEFAULT_APP_SETTINGS })
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
   const readyRef = useRef(false)
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const latestRef = useRef(settings)
+  const { toast, show, clear } = useToast()
 
   useEffect(() => {
     latestRef.current = settings
@@ -36,11 +36,12 @@ export function SettingsPanel() {
         if (alive) {
           const message = err instanceof Error ? err.message : 'Could not load settings.'
           if (/permission|insufficient/i.test(message)) {
-            setError(
+            show(
               'Publish Firestore rules for settings (admin/firestore.rules), then refresh.',
+              'error',
             )
           } else {
-            setError(message)
+            show(message, 'error')
           }
           setSettings({ ...DEFAULT_APP_SETTINGS })
           readyRef.current = true
@@ -51,22 +52,21 @@ export function SettingsPanel() {
       })
     return () => {
       alive = false
-      if (timerRef.current) clearTimeout(timerRef.current)
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
     }
   }, [])
 
   async function persist(next: AppSettings) {
     setBusy(true)
-    setError(null)
-    setNotice('Saving…')
+    clear()
+    show('Saving…', 'loading')
     try {
       const saved = await saveAppSettings(next)
       setSettings(saved)
       latestRef.current = saved
-      setNotice('Saved.')
+      show('Saved.')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not save settings.')
-      setNotice(null)
+      show(err instanceof Error ? err.message : 'Could not save settings.', 'error')
     } finally {
       setBusy(false)
     }
@@ -76,12 +76,12 @@ export function SettingsPanel() {
     if (!readyRef.current || loading) return
     latestRef.current = next
     setSettings(next)
-    if (timerRef.current) clearTimeout(timerRef.current)
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
     if (immediate) {
       void persist(next)
       return
     }
-    timerRef.current = setTimeout(() => {
+    saveTimerRef.current = setTimeout(() => {
       void persist(latestRef.current)
     }, 450)
   }
@@ -95,11 +95,8 @@ export function SettingsPanel() {
 
   return (
     <div className="settings-layout">
-      {loading ? <p className="banner banner--loading">Loading settings…</p> : null}
-      {error ? <p className="banner banner--error">{error}</p> : null}
-      {notice ? (
-        <p className={`banner${busy ? ' banner--loading' : ' banner--ok'}`}>{notice}</p>
-      ) : null}
+      {loading ? <Toast message="Loading settings…" variant="loading" /> : null}
+      {toast ? <Toast message={toast.message} variant={toast.variant} /> : null}
 
       <div className="panel-grid">
         <div className="panel-col">
@@ -115,7 +112,7 @@ export function SettingsPanel() {
                   <input
                     type="checkbox"
                     checked={settings.adsEnabled}
-                    disabled={loading}
+                    disabled={loading || busy}
                     onChange={(e) => patch({ adsEnabled: e.target.checked }, true)}
                   />
                   <code className="panel-badge">{settings.adsEnabled ? 'On' : 'Off'}</code>
@@ -127,7 +124,7 @@ export function SettingsPanel() {
                   <button
                     type="button"
                     className={`ads-mode-btn${isTest ? ' ads-mode-btn--on' : ''}`}
-                    disabled={loading}
+                    disabled={loading || busy}
                     onClick={() => patch({ adsMode: 'test' }, true)}
                   >
                     Test
@@ -135,7 +132,7 @@ export function SettingsPanel() {
                   <button
                     type="button"
                     className={`ads-mode-btn${!isTest ? ' ads-mode-btn--on' : ''}`}
-                    disabled={loading}
+                    disabled={loading || busy}
                     onClick={() => patch({ adsMode: 'production' }, true)}
                   >
                     Production
@@ -150,7 +147,7 @@ export function SettingsPanel() {
                   min={1}
                   max={50}
                   value={settings.interstitialEveryNOpens}
-                  disabled={loading}
+                  disabled={loading || busy}
                   onChange={(e) =>
                     patch({ interstitialEveryNOpens: Number(e.target.value) || 1 }, true)
                   }
@@ -164,11 +161,14 @@ export function SettingsPanel() {
                   min={1}
                   max={50}
                   value={settings.interstitialEveryNDownloads}
-                  disabled={loading}
+                  disabled={loading || busy}
                   onChange={(e) =>
-                    patch({
-                      interstitialEveryNDownloads: Number(e.target.value) || 1,
-                    }, true)
+                    patch(
+                      {
+                        interstitialEveryNDownloads: Number(e.target.value) || 1,
+                      },
+                      true,
+                    )
                   }
                 />
               </li>
@@ -212,7 +212,7 @@ export function SettingsPanel() {
                 <span>App Open</span>
                 <input
                   value={settings.appOpenAdUnitId}
-                  disabled={loading}
+                  disabled={loading || busy}
                   placeholder="ca-app-pub-xxxx/yyyy"
                   onChange={(e) => patch({ appOpenAdUnitId: e.target.value })}
                 />
@@ -221,7 +221,7 @@ export function SettingsPanel() {
                 <span>Interstitial</span>
                 <input
                   value={settings.interstitialAdUnitId}
-                  disabled={loading}
+                  disabled={loading || busy}
                   placeholder="ca-app-pub-xxxx/yyyy"
                   onChange={(e) => patch({ interstitialAdUnitId: e.target.value })}
                 />

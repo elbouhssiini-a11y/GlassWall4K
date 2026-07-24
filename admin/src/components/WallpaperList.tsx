@@ -1,4 +1,5 @@
 import { useMemo, useState, type DragEvent } from 'react'
+import { Toast, useToast } from './Toast'
 import { removeWallpaper, saveWallpaperOrder } from '../lib/firebase'
 import { replaceManifestWallpapers } from '../lib/github'
 import { sortWallpapers, withRankOrder, type WallpaperRecord } from '../lib/types'
@@ -16,11 +17,10 @@ export function WallpaperList({ items, categoryName, onChange, onUploadClick }: 
   const showAll = !categoryName
   const [busyId, setBusyId] = useState<string | null>(null)
   const [busyOrder, setBusyOrder] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
   const [optimistic, setOptimistic] = useState<WallpaperRecord[] | null>(null)
   const [dragId, setDragId] = useState<string | null>(null)
   const [overId, setOverId] = useState<string | null>(null)
+  const { toast, show, clear } = useToast()
 
   const categoryItems = useMemo(() => {
     if (showAll) return sortWallpapers(items)
@@ -47,26 +47,27 @@ export function WallpaperList({ items, categoryName, onChange, onUploadClick }: 
     const rankedLocal = withRankOrder(nextCategoryItems)
     setOptimistic(rankedLocal)
     setBusyOrder(true)
-    setError(null)
-    setNotice(null)
+    clear()
+    show('Saving…', 'loading')
     try {
       const merged = mergeCategory(rankedLocal)
       const ranked = await saveWallpaperOrder(merged)
       try {
         await replaceManifestWallpapers(ranked)
-        setNotice('Order saved.')
+        show('Order saved.')
       } catch (manifestError) {
-        setNotice(
+        show(
           `Order saved. Manifest sync failed: ${
             manifestError instanceof Error ? manifestError.message : 'GitHub error'
           }`,
+          'error',
         )
       }
       onChange(ranked)
       // Keep optimistic until parent items reflect the new order.
       setOptimistic(null)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not save order.')
+      show(err instanceof Error ? err.message : 'Could not save order.', 'error')
       setOptimistic(null)
     } finally {
       setBusyOrder(false)
@@ -84,8 +85,7 @@ export function WallpaperList({ items, categoryName, onChange, onUploadClick }: 
   }
 
   async function handleRemove(item: WallpaperRecord) {
-    setError(null)
-    setNotice(null)
+    clear()
     setBusyId(item.id)
 
     try {
@@ -103,18 +103,19 @@ export function WallpaperList({ items, categoryName, onChange, onUploadClick }: 
         onChange(ranked)
         setOptimistic(null)
         await replaceManifestWallpapers(ranked)
-        setNotice('Deleted.')
+        show('Deleted.')
       } catch (syncError) {
         onChange(merged)
         setOptimistic(null)
-        setNotice(
+        show(
           `Deleted. Sync failed: ${
             syncError instanceof Error ? syncError.message : 'sync error'
           }`,
+          'error',
         )
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Delete failed.')
+      show(err instanceof Error ? err.message : 'Delete failed.', 'error')
     } finally {
       setBusyId(null)
     }
@@ -153,6 +154,8 @@ export function WallpaperList({ items, categoryName, onChange, onUploadClick }: 
 
   return (
     <section className="catalog">
+      {toast ? <Toast message={toast.message} variant={toast.variant} /> : null}
+
       <div className="catalog__bar">
         <p className="catalog__count">
           {working.length === 1 ? '1 item' : `${working.length} items`}
@@ -160,9 +163,6 @@ export function WallpaperList({ items, categoryName, onChange, onUploadClick }: 
         </p>
         {busyOrder ? <p className="catalog__saving">Saving…</p> : null}
       </div>
-
-      {error ? <p className="banner banner--error">{error}</p> : null}
-      {notice ? <p className="banner banner--ok">{notice}</p> : null}
 
       {working.length === 0 ? (
         <div className="empty-state">

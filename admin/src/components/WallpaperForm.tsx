@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState, type DragEvent, type FormEvent } from 'react'
+import { Toast, useToast } from './Toast'
 import { DEFAULT_CATEGORIES, slugify } from '../lib/categories'
 import { saveWallpaper } from '../lib/firebase'
 import { uploadWallpaperImages } from '../lib/github'
@@ -42,9 +43,8 @@ export function WallpaperForm({ onCreated, onBatchComplete }: Props) {
   const [queue, setQueue] = useState<QueueItem[]>([])
   const [dragging, setDragging] = useState(false)
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [status, setStatus] = useState<string | null>(null)
   const busyRef = useRef(false)
+  const { toast, show, clear } = useToast({ okDismissMs: 2200 })
 
   const countLabel = useMemo(() => {
     if (busy) return 'Publishing…'
@@ -83,8 +83,8 @@ export function WallpaperForm({ onCreated, onBatchComplete }: Props) {
 
     busyRef.current = true
     setBusy(true)
-    setError(null)
-    setStatus(null)
+    clear()
+    show('Publishing…', 'loading')
 
     let successCount = 0
     const failed: string[] = []
@@ -97,7 +97,7 @@ export function WallpaperForm({ onCreated, onBatchComplete }: Props) {
         const title = item.title.trim() || titleFromFile(item.file)
         const id = `${slugify(title)}-${Date.now().toString(36)}-${index}`
 
-        setStatus(`Uploading ${index + 1}/${items.length}: ${title}`)
+        show(`Uploading ${index + 1}/${items.length}: ${title}`, 'loading')
 
         try {
           const uploaded = await uploadWallpaperImages(id, item.file)
@@ -113,7 +113,7 @@ export function WallpaperForm({ onCreated, onBatchComplete }: Props) {
             createdAt: new Date().toISOString(),
           }
 
-          setStatus(`Saving ${index + 1}/${items.length}…`)
+          show(`Saving ${index + 1}/${items.length}…`, 'loading')
           await saveWallpaper(record)
           created.push(record)
           onCreated(record)
@@ -130,7 +130,7 @@ export function WallpaperForm({ onCreated, onBatchComplete }: Props) {
       }
 
       if (created.length > 0) {
-        setStatus(`Syncing catalog (${created.length})…`)
+        show(`Syncing catalog (${created.length})…`, 'loading')
         try {
           await onBatchComplete?.(created)
         } catch (err) {
@@ -141,12 +141,12 @@ export function WallpaperForm({ onCreated, onBatchComplete }: Props) {
       removeKeys(okKeys)
 
       if (failed.length === 0) {
-        setStatus(`Published ${successCount} wallpaper${successCount === 1 ? '' : 's'}.`)
+        show(`Published ${successCount} wallpaper${successCount === 1 ? '' : 's'}.`)
       } else {
-        setStatus(
+        show(
           `${successCount} published, ${failed.length} failed. Failed items stay in the queue.`,
+          'error',
         )
-        setError(failed.slice(0, 3).join(' · '))
       }
     } finally {
       busyRef.current = false
@@ -161,7 +161,6 @@ export function WallpaperForm({ onCreated, onBatchComplete }: Props) {
     if (added.length === 0) return
 
     setQueue((prev) => [...prev, ...added])
-    setError(null)
     void publishItems(added)
   }
 
@@ -175,7 +174,7 @@ export function WallpaperForm({ onCreated, onBatchComplete }: Props) {
   function onSubmit(event: FormEvent) {
     event.preventDefault()
     if (queue.length === 0) {
-      setError('Add images by drag & drop or file picker.')
+      show('Add images by drag & drop or file picker.', 'error')
       return
     }
     void publishItems([...queue])
@@ -183,6 +182,8 @@ export function WallpaperForm({ onCreated, onBatchComplete }: Props) {
 
   return (
     <form className="upload-studio" onSubmit={onSubmit}>
+      {toast ? <Toast message={toast.message} variant={toast.variant} /> : null}
+
       <div className="upload-studio__controls">
         <div className="upload-field">
           <span className="upload-field__label">Catalog</span>
@@ -292,9 +293,6 @@ export function WallpaperForm({ onCreated, onBatchComplete }: Props) {
           </ul>
         </div>
       ) : null}
-
-      {error ? <p className="banner banner--error">{error}</p> : null}
-      {status ? <p className="banner banner--ok">{status}</p> : null}
 
       {queue.length > 0 && !busy ? (
         <div className="upload-studio__footer">
