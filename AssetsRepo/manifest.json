@@ -1,0 +1,147 @@
+{
+  "categories": [
+    { "id": "nature", "name": "Nature", "icon": "leaf.fill" },
+    { "id": "amoled", "name": "AMOLED", "icon": "moon.fill" },
+    { "id": "anime", "name": "Anime", "icon": "sparkles" },
+    { "id": "cars", "name": "Cars", "icon": "car.fill" },
+    { "id": "space", "name": "Space", "icon": "moon.stars.fill" },
+    { "id": "gaming", "name": "Gaming", "icon": "gamecontroller.fill" },
+    { "id": "minimal", "name": "Minimal", "icon": "square.fill" },
+    { "id": "abstract", "name": "Abstract", "icon": "paintbrush.fill" },
+    { "id": "animals", "name": "Animals", "icon": "pawprint.fill" }
+  ],
+  "wallpapers": [
+    {
+      "id": "aurora-dreams",
+      "title": "Aurora Dreams",
+      "imageURL": "https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=2160",
+      "thumbnailURL": "https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=600",
+      "category": "Nature",
+      "resolution": "4K",
+      "isPremium": false,
+      "featured": true,
+      "createdAt": "2026-07-12T00:00:00Z"
+    },
+    {
+      "id": "forest-haze",
+      "title": "Forest Haze",
+      "imageURL": "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=2160",
+      "thumbnailURL": "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=600",
+      "category": "Nature",
+      "resolution": "4K",
+      "isPremium": false,
+      "featured": false,
+      "createdAt": "2026-07-09T00:00:00Z"
+    },
+    {
+      "id": "oled-dunes",
+      "title": "OLED Dunes",
+      "imageURL": "https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=2160",
+      "thumbnailURL": "https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=600",
+      "category": "AMOLED",
+      "resolution": "4K",
+      "isPremium": true,
+      "featured": false,
+      "createdAt": "2026-07-06T00:00:00Z"
+    },
+    {
+      "id": "sakura-glow",
+      "title": "Sakura Glow",
+      "imageURL": "https://images.unsplash.com/photo-1522383225653-ed111181a951?w=2160",
+      "thumbnailURL": "https://images.unsplash.com/photo-1522383225653-ed111181a951?w=600",
+      "category": "Anime",
+      "resolution": "4K",
+      "isPremium": false,
+      "featured": true,
+      "createdAt": "2026-07-11T00:00:00Z"
+    },
+    {
+      "id": "midnight-run",
+      "title": "Midnight Run",
+      "imageURL": "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=2160",
+      "thumbnailURL": "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=600",
+      "category": "Cars",
+      "resolution": "4K",
+      "isPremium": false,
+      "featured": false,
+      "createdAt": "2026-07-02T00:00:00Z"
+    },
+    {
+      "id": "orbital-dust",
+      "title": "Orbital Dust",
+      "imageURL": "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=2160",
+      "thumbnailURL": "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=600",
+      "category": "Space",
+      "resolution": "4K",
+      "isPremium": false,
+      "featured": true,
+      "createdAt": "2026-07-13T00:00:00Z"
+    },
+    {
+      "id": "pixel-arena",
+      "title": "Pixel Arena",
+      "imageURL": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=2160",
+      "thumbnailURL": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600",
+      "category": "Gaming",
+      "resolution": "4K",
+      "isPremium": true,
+      "featured": false,
+      "createdAt": "2026-07-08T00:00:00Z"
+    },
+    {
+      "id": "soft-grain",
+      "title": "Soft Grain",
+      "imageURL": "https://images.unsplash.com/photo-1557683316-973673baf926?w=2160",
+      "thumbnailURL": "https://images.unsplash.com/photo-1557683316-973673baf926?w=600",
+      "category": "Minimal",
+      "resolution": "4K",
+      "isPremium": false,
+      "featured": false,
+      "createdAt": "2026-07-04T00:00:00Z"
+    },
+    {
+      "id": "liquid-form",
+      "title": "Liquid Form",
+      "imageURL": "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=2160",
+      "thumbnailURL": "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=600",
+      "category": "Abstract",
+      "resolution": "4K",
+      "isPremium": false,
+      "featured": false,
+      "createdAt": "2026-07-10T00:00:00Z"
+    },
+    {
+      "id": "golden-mane",
+      "title": "Golden Mane",
+      "imageURL": "https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=2160",
+      "thumbnailURL": "https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=600",
+      "category": "Animals",
+      "resolution": "4K",
+      "isPremium": false,
+      "featured": false,
+      "createdAt": "2026-07-07T00:00:00Z"
+    },
+    {
+      "id": "crimson-void",
+      "title": "Crimson Void",
+      "imageURL": "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=2160",
+      "thumbnailURL": "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=600",
+      "category": "AMOLED",
+      "resolution": "4K",
+      "isPremium": false,
+      "featured": false,
+      "createdAt": "2026-07-05T00:00:00Z"
+    },
+    {
+      "id": "alpine-light",
+      "title": "Alpine Light",
+      "imageURL": "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=2160",
+      "thumbnailURL": "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600",
+      "category": "Nature",
+      "resolution": "4K",
+      "isPremium": false,
+      "featured": false,
+      "createdAt": "2026-07-03T00:00:00Z"
+    }
+  ]
+}
