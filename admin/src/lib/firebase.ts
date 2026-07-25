@@ -25,6 +25,7 @@ import {
   type AppSettings,
   type WallpaperRecord,
 } from './types'
+import { pushAppSettingsMirror } from './github'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -149,25 +150,113 @@ export async function loadAppSettings(): Promise<AppSettings> {
       1,
       Number(data.interstitialEveryNDownloads) || legacyEvery,
     ),
+    appOpenMinBackgroundSeconds: Math.max(
+      0,
+      Number(data.appOpenMinBackgroundSeconds) || 2,
+    ),
+    introEnabled: Boolean(data.introEnabled),
+    introShowEveryLaunch: Boolean(data.introShowEveryLaunch),
+    introVersion: Math.max(1, Math.floor(Number(data.introVersion) || 1)),
+    introTitle: String(data.introTitle ?? DEFAULT_APP_SETTINGS.introTitle),
+    introSubtitle: String(data.introSubtitle ?? DEFAULT_APP_SETTINGS.introSubtitle),
+    introImageURL: String(data.introImageURL ?? ''),
+    introVideoURL: String(data.introVideoURL ?? ''),
+    introMaxSeconds: Math.max(
+      0,
+      Math.min(120, Math.floor(Number(data.introMaxSeconds) || 0)),
+    ),
+    introButtonTitle: String(
+      data.introButtonTitle ?? DEFAULT_APP_SETTINGS.introButtonTitle,
+    ),
     appOpenAdUnitId: String(data.appOpenAdUnitId ?? ''),
     interstitialAdUnitId: String(data.interstitialAdUnitId ?? ''),
     updatedAt: String(data.updatedAt ?? DEFAULT_APP_SETTINGS.updatedAt),
   }
 }
 
-export async function saveAppSettings(settings: AppSettings): Promise<AppSettings> {
+export async function saveAppSettings(
+  settings: AppSettings,
+  options?: { mirror?: boolean },
+): Promise<AppSettings> {
+  const wantMirror = options?.mirror ?? true
   const next: AppSettings = {
     ...settings,
+    adsEnabled: Boolean(settings.adsEnabled),
+    introEnabled: Boolean(settings.introEnabled),
+    introShowEveryLaunch: Boolean(settings.introShowEveryLaunch),
     interstitialEveryNOpens: Math.max(
       1,
-      Math.floor(settings.interstitialEveryNOpens) || 3,
+      Math.floor(settings.interstitialEveryNOpens) || 4,
     ),
     interstitialEveryNDownloads: Math.max(
       1,
       Math.floor(settings.interstitialEveryNDownloads) || 3,
     ),
+    appOpenMinBackgroundSeconds: Math.max(
+      0,
+      Math.min(600, Math.floor(settings.appOpenMinBackgroundSeconds) || 0),
+    ),
+    introVersion: Math.max(1, Math.floor(settings.introVersion) || 1),
+    introTitle: settings.introTitle.trim() || DEFAULT_APP_SETTINGS.introTitle,
+    introSubtitle: settings.introSubtitle.trim(),
+    introImageURL: settings.introImageURL.trim(),
+    introVideoURL: settings.introVideoURL.trim(),
+    introMaxSeconds: Math.max(
+      0,
+      Math.min(120, Math.floor(settings.introMaxSeconds) || 0),
+    ),
+    introButtonTitle:
+      settings.introButtonTitle.trim() || DEFAULT_APP_SETTINGS.introButtonTitle,
     updatedAt: new Date().toISOString(),
   }
-  await setDoc(settingsDoc, next, { merge: true })
+
+  let firestoreOk = false
+  try {
+    await setDoc(settingsDoc, next, { merge: true })
+    firestoreOk = true
+  } catch (error) {
+    console.warn('Firestore settings save failed.', error)
+  }
+
+  let mirrorOk = false
+  let mirrorError: unknown
+  if (wantMirror) {
+    try {
+      await pushAppSettingsMirror({
+        adsEnabled: next.adsEnabled,
+        adsMode: next.adsMode,
+        appOpenAdUnitId: next.appOpenAdUnitId,
+        interstitialAdUnitId: next.interstitialAdUnitId,
+        interstitialEveryNOpens: next.interstitialEveryNOpens,
+        interstitialEveryNDownloads: next.interstitialEveryNDownloads,
+        appOpenMinBackgroundSeconds: next.appOpenMinBackgroundSeconds,
+        introEnabled: next.introEnabled,
+        introShowEveryLaunch: next.introShowEveryLaunch,
+        introVersion: next.introVersion,
+        introTitle: next.introTitle,
+        introSubtitle: next.introSubtitle,
+        introImageURL: next.introImageURL,
+        introVideoURL: next.introVideoURL,
+        introMaxSeconds: next.introMaxSeconds,
+        introButtonTitle: next.introButtonTitle,
+        updatedAt: next.updatedAt,
+      })
+      mirrorOk = true
+    } catch (error) {
+      mirrorError = error
+      console.warn('GitHub settings mirror failed.', error)
+    }
+  }
+
+  if (!firestoreOk && !mirrorOk) {
+    throw new Error(
+      mirrorError instanceof Error
+        ? mirrorError.message
+        : wantMirror
+          ? 'Could not save settings (Firestore + GitHub both failed).'
+          : 'Could not save settings to Firestore.',
+    )
+  }
+
   return next
 }

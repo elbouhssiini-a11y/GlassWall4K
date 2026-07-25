@@ -12,13 +12,14 @@ struct GlassWall4KApp: App {
     @Environment(\.scenePhase) private var scenePhase
     @State private var didEnterBackground = false
 
+    init() {
+        MediaCache.configureSharedURLCache()
+    }
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootView()
                 .environmentObject(AdsManager.shared)
-                .task {
-                    await AdsManager.shared.start()
-                }
         }
         .onChange(of: scenePhase) { _, phase in
             switch phase {

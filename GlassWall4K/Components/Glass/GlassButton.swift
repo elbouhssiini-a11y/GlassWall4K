@@ -14,6 +14,8 @@ struct GlassPressButtonStyle: ButtonStyle {
     }
 }
 
+typealias WallpaperPressButtonStyle = GlassPressButtonStyle
+
 struct GlassButton: View {
     let title: String
     var systemName: String? = nil

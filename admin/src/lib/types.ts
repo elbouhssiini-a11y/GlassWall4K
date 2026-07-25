@@ -3,6 +3,8 @@ export type WallpaperRecord = {
   title: string
   imageURL: string
   thumbnailURL: string
+  /** Looping video for Live Wallpapers. Absent/empty = static image. */
+  videoURL?: string
   category: string
   resolution: string
   featured: boolean
@@ -45,6 +47,22 @@ export type AppSettings = {
   interstitialEveryNOpens: number
   /** Show interstitial every N successful downloads. */
   interstitialEveryNDownloads: number
+  /** Seconds outside the app before App Open can show on return. */
+  appOpenMinBackgroundSeconds: number
+  /** Show intro screen before main tabs. */
+  introEnabled: boolean
+  /** If false, intro shows once per version bump. */
+  introShowEveryLaunch: boolean
+  /** Bump to force intro again for users who already dismissed it. */
+  introVersion: number
+  introTitle: string
+  introSubtitle: string
+  introImageURL: string
+  /** Looping intro video (GitHub raw URL). Prefer over image when set. */
+  introVideoURL: string
+  /** Max seconds to play intro video before entering app. 0 = full video. */
+  introMaxSeconds: number
+  introButtonTitle: string
   updatedAt: string
 }
 
@@ -59,8 +77,18 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   adsMode: 'test',
   appOpenAdUnitId: '',
   interstitialAdUnitId: '',
-  interstitialEveryNOpens: 3,
+  interstitialEveryNOpens: 4,
   interstitialEveryNDownloads: 3,
+  appOpenMinBackgroundSeconds: 2,
+  introEnabled: false,
+  introShowEveryLaunch: false,
+  introVersion: 1,
+  introTitle: 'Welcome to Wallora Glass',
+  introSubtitle: 'Browse Live & iOS wallpapers. Save favorites and download in one tap.',
+  introImageURL: '',
+  introVideoURL: '',
+  introMaxSeconds: 0,
+  introButtonTitle: 'Get Started',
   updatedAt: new Date(0).toISOString(),
 }
 
@@ -79,11 +107,13 @@ export function resolveAdUnitIds(settings: AppSettings) {
 }
 
 export function normalizeWallpaper(raw: Partial<WallpaperRecord> & { id: string }): WallpaperRecord {
+  const videoURL = typeof raw.videoURL === 'string' ? raw.videoURL.trim() : ''
   return {
     id: raw.id,
     title: raw.title ?? 'Wallpaper',
     imageURL: raw.imageURL ?? '',
     thumbnailURL: raw.thumbnailURL ?? '',
+    ...(videoURL ? { videoURL } : {}),
     category: raw.category ?? 'iOS 27',
     resolution: raw.resolution ?? '4K',
     featured: Boolean(raw.featured),
@@ -120,11 +150,7 @@ export function withCategoryRankOrder(
     const group = items
       .filter((item) => {
         if (claimed.has(item.id)) return false
-        if (item.category === name) return true
-        if (name === 'iOS 27' && (item.category === 'iOS Wallpapers' || item.category === 'iOS 27')) {
-          return true
-        }
-        return false
+        return matchesCategoryForRank(item.category, name)
       })
       .map((item) => ({ ...item, category: name }))
     group.forEach((item) => claimed.add(item.id))
@@ -134,4 +160,25 @@ export function withCategoryRankOrder(
   const orphans = items.filter((item) => !claimed.has(item.id) && !known.has(item.category))
   ranked.push(...withRankOrder(orphans))
   return ranked
+}
+
+function matchesCategoryForRank(itemCategory: string, categoryName: string): boolean {
+  if (itemCategory === categoryName) return true
+  if (
+    categoryName === 'iOS 27' &&
+    (itemCategory === 'iOS Wallpapers' ||
+      itemCategory === 'iOS 27' ||
+      itemCategory === 'iOS 27 Wallpapers')
+  ) {
+    return true
+  }
+  if (
+    categoryName === 'Live Wallpapers' &&
+    (itemCategory === 'Live Wallpapers' ||
+      itemCategory === '4K Wallpapers' ||
+      itemCategory === '4K')
+  ) {
+    return true
+  }
+  return false
 }

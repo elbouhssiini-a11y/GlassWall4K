@@ -6,7 +6,7 @@
 import Foundation
 import Observation
 
-/// Catalog for the 4K tab (legacy filename kept for Xcode project references).
+/// Catalog for the Live Wallpapers tab (legacy filename kept for Xcode project references).
 @Observable
 @MainActor
 final class SearchViewModel {
@@ -19,7 +19,7 @@ final class SearchViewModel {
 
     init(
         repository: (any WallpaperRepository)? = nil,
-        category: Category = .fourKWallpapers
+        category: Category = .liveWallpapers
     ) {
         self.repository = repository ?? AppDependencies.shared.wallpaperRepository
         self.category = category

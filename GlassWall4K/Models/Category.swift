@@ -16,21 +16,29 @@ struct Category: Identifiable, Hashable, Codable, Sendable {
         icon: "iphone"
     )
 
-    nonisolated static let fourKWallpapers = Category(
+    /// Catalog id kept as `4k-wallpapers` for existing Firestore/manifest data.
+    nonisolated static let liveWallpapers = Category(
         id: "4k-wallpapers",
-        name: "4K Wallpapers",
-        icon: "4k.tv"
+        name: "Live Wallpapers",
+        icon: "play.circle"
     )
 
-    nonisolated static let all: [Category] = [.iosWallpapers, .fourKWallpapers]
+    /// Legacy alias.
+    nonisolated static let fourKWallpapers = liveWallpapers
 
-    /// Accepts current name plus legacy "iOS Wallpapers" for existing data.
+    nonisolated static let all: [Category] = [.iosWallpapers, .liveWallpapers]
+
     nonisolated func matches(_ wallpaperCategory: String) -> Bool {
         if wallpaperCategory.compare(name, options: .caseInsensitive) == .orderedSame {
             return true
         }
         if id == Self.iosWallpapers.id {
             return wallpaperCategory.compare("iOS Wallpapers", options: .caseInsensitive) == .orderedSame
+                || wallpaperCategory.compare("iOS 27 Wallpapers", options: .caseInsensitive) == .orderedSame
+        }
+        if id == Self.liveWallpapers.id {
+            return wallpaperCategory.compare("4K Wallpapers", options: .caseInsensitive) == .orderedSame
+                || wallpaperCategory.compare("4K", options: .caseInsensitive) == .orderedSame
         }
         return false
     }

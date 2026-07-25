@@ -18,7 +18,7 @@ final class SettingsViewModel {
     private var clearNoticeTask: Task<Void, Never>?
 
     func clearImageCache() {
-        URLCache.shared.removeAllCachedResponses()
+        MediaCache.clear()
         FirestoreWallpaperRepository.invalidateCache()
         FirestoreAppSettingsRepository.invalidateCache()
 

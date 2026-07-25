@@ -25,6 +25,7 @@ struct WallpaperDTO: Codable, Sendable {
     let title: String
     let imageURL: URL
     let thumbnailURL: URL
+    let videoURL: String?
     let category: String
     let resolution: String
     let featured: Bool
@@ -32,11 +33,19 @@ struct WallpaperDTO: Codable, Sendable {
     let createdAt: Date
 
     func toDomain() -> Wallpaper {
-        Wallpaper(
+        let liveURL: URL? = {
+            guard let raw = videoURL?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty else {
+                return nil
+            }
+            return URL(string: raw)
+        }()
+
+        return Wallpaper(
             id: id,
             title: title,
             imageURL: imageURL,
             thumbnailURL: thumbnailURL,
+            videoURL: liveURL,
             category: category,
             resolution: resolution,
             featured: featured,

@@ -25,12 +25,6 @@ struct ContentView: View {
                     .navigationTitle("iOS 27")
                     .toolbarTitleDisplayMode(.inlineLarge)
                     .toolbarBackground(.hidden, for: .navigationBar)
-                    .navigationDestination(for: Wallpaper.self) { wallpaper in
-                        WallpaperDetailView(
-                            wallpaper: wallpaper,
-                            namespace: iosTransition
-                        )
-                    }
             }
             .tabItem {
                 Label(AppTab.ios.title, systemImage: AppTab.ios.systemImage)
@@ -39,15 +33,9 @@ struct ContentView: View {
 
             NavigationStack(path: $fourKPath) {
                 SearchView(namespace: fourKTransition)
-                    .navigationTitle("4K Wallpapers")
+                    .navigationTitle("Live Wallpapers")
                     .toolbarTitleDisplayMode(.inlineLarge)
                     .toolbarBackground(.hidden, for: .navigationBar)
-                    .navigationDestination(for: Wallpaper.self) { wallpaper in
-                        WallpaperDetailView(
-                            wallpaper: wallpaper,
-                            namespace: fourKTransition
-                        )
-                    }
             }
             .tabItem {
                 Label(AppTab.fourK.title, systemImage: AppTab.fourK.systemImage)
@@ -58,12 +46,6 @@ struct ContentView: View {
                 FavoritesView(namespace: favoritesTransition)
                     .navigationTitle("Favorites")
                     .navigationBarTitleDisplayMode(.large)
-                    .navigationDestination(for: Wallpaper.self) { wallpaper in
-                        WallpaperDetailView(
-                            wallpaper: wallpaper,
-                            namespace: favoritesTransition
-                        )
-                    }
             }
             .tabItem {
                 Label(AppTab.favorites.title, systemImage: AppTab.favorites.systemImage)
@@ -81,6 +63,9 @@ struct ContentView: View {
             .tag(AppTab.settings)
         }
         .tint(.accentColor)
+        .onAppear {
+            AdsManager.shared.notifyRootUIReady()
+        }
     }
 }
 

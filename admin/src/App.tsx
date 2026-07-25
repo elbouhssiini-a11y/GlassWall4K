@@ -1,10 +1,13 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import type { User } from 'firebase/auth'
+import { ConfigPanel } from './components/ConfigPanel'
+import { IntroPanel } from './components/IntroPanel'
 import { SettingsPanel } from './components/SettingsPanel'
+import { StatusBadge, type PageStatus } from './components/StatusBadge'
 import { Toast } from './components/Toast'
 import { WallpaperForm } from './components/WallpaperForm'
 import { WallpaperList } from './components/WallpaperList'
-import { FOUR_K_CATEGORY, IOS_CATEGORY } from './lib/categories'
+import { LIVE_CATEGORY, IOS_CATEGORY } from './lib/categories'
 import {
   isAdminUser,
   listWallpapers,
@@ -18,27 +21,49 @@ import { replaceManifestWallpapers } from './lib/github'
 import { withCategoryRankOrder, type WallpaperRecord } from './lib/types'
 import './App.css'
 
-type HomeTab = 'home' | 'ios' | 'fourK' | 'upload' | 'settings'
+type HomeTab = 'home' | 'ios' | 'live' | 'upload' | 'intro' | 'settings' | 'ads'
 
-const NAV: { id: HomeTab; label: string; icon: string }[] = [
+const NAV: { id: Exclude<HomeTab, 'upload'>; label: string; icon: string }[] = [
   { id: 'home', label: 'Dashboard', icon: 'fa-th-large' },
   { id: 'ios', label: 'iOS 27 Wallpapers', icon: 'fa-mobile-screen' },
-  { id: 'fourK', label: '4K Wallpapers', icon: 'fa-image' },
+  { id: 'live', label: 'Live Wallpapers', icon: 'fa-play-circle' },
+  { id: 'intro', label: 'Intro', icon: 'fa-clapperboard' },
   { id: 'settings', label: 'Settings', icon: 'fa-gear' },
+  { id: 'ads', label: 'Ads Management', icon: 'fa-chart-line' },
 ]
+
+function navActiveId(tab: HomeTab, uploadCategory: string): Exclude<HomeTab, 'upload'> {
+  if (tab !== 'upload') return tab
+  return uploadCategory === LIVE_CATEGORY.name ? 'live' : 'ios'
+}
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null)
   const [authReady, setAuthReady] = useState(false)
-  const [email, setEmail] = useState('elbouhssiini@gmail.com')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [items, setItems] = useState<WallpaperRecord[]>([])
   const [loading, setLoading] = useState(false)
   const [bootError, setBootError] = useState<string | null>(null)
   const [busyAuth, setBusyAuth] = useState(false)
   const [tab, setTab] = useState<HomeTab>('home')
+  const [uploadCategory, setUploadCategory] = useState(IOS_CATEGORY.name)
+  const [pageStatus, setPageStatus] = useState<PageStatus | null>(null)
 
   const authed = isAdminUser(user)
+  const activeNav = navActiveId(tab, uploadCategory)
+  const onPageStatusChange = useCallback((status: PageStatus | null) => {
+    setPageStatus(status)
+  }, [])
+
+  useEffect(() => {
+    setPageStatus(null)
+  }, [tab])
+
+  function openUpload(categoryName = IOS_CATEGORY.name) {
+    setUploadCategory(categoryName)
+    setTab('upload')
+  }
 
   const pageMeta = useMemo(() => {
     switch (tab) {
@@ -46,7 +71,7 @@ export default function App() {
         return {
           kicker: 'Library',
           title: 'All Wallpapers',
-          subtitle: 'Every wallpaper across iOS 27 Wallpapers and 4K Wallpapers.',
+          subtitle: 'Every wallpaper across iOS 27 Wallpapers and Live Wallpapers.',
         }
       case 'ios':
         return {
@@ -54,23 +79,35 @@ export default function App() {
           title: 'iOS 27 Wallpapers',
           subtitle: 'Drag to reorder. Changes save automatically.',
         }
-      case 'fourK':
+      case 'live':
         return {
           kicker: 'Catalog',
-          title: '4K Wallpapers',
+          title: 'Live Wallpapers',
           subtitle: 'Drag to reorder. Changes save automatically.',
         }
       case 'upload':
         return {
           kicker: 'Publishing',
           title: 'Upload',
-          subtitle: 'Pick a catalog, drop images, publish.',
+          subtitle: 'Pick a catalog, drop images or videos, publish.',
+        }
+      case 'intro':
+        return {
+          kicker: 'Onboarding',
+          title: 'Intro',
+          subtitle: 'Fullscreen launch video · duration · publish to the iOS app.',
         }
       case 'settings':
         return {
-          kicker: 'Configuration',
+          kicker: 'Workspace',
           title: 'Settings',
-          subtitle: 'AdMob and app configuration.',
+          subtitle: 'Configure content collections, GitHub assets and application rules.',
+        }
+      case 'ads':
+        return {
+          kicker: 'Remote configuration',
+          title: 'Ads Management',
+          subtitle: 'Manage App Open and Interstitial ads remotely.',
         }
     }
   }, [tab])
@@ -114,7 +151,7 @@ export default function App() {
     const rest = current.filter((item) => !createdIds.has(item.id))
     const ranked = withCategoryRankOrder(
       [...created, ...rest],
-      [IOS_CATEGORY.name, FOUR_K_CATEGORY.name],
+      [IOS_CATEGORY.name, LIVE_CATEGORY.name],
     )
     const saved = await saveWallpaperOrder(ranked)
     await replaceManifestWallpapers(saved)
@@ -224,7 +261,7 @@ export default function App() {
               <li key={item.id}>
                 <button
                   type="button"
-                  className={`nav-link${tab === item.id ? ' active' : ''}`}
+                  className={`nav-link${activeNav === item.id ? ' active' : ''}`}
                   onClick={() => setTab(item.id)}
                 >
                   <span className="nav-link__label">
@@ -255,7 +292,7 @@ export default function App() {
       </aside>
 
       <main className="main-content">
-        <section className="content-section active">
+        <section className="content-section">
           <header className="admin-page-header">
             <div className="admin-page-heading">
               <p className="admin-page-kicker">{pageMeta.kicker}</p>
@@ -264,13 +301,36 @@ export default function App() {
             </div>
             <div className="admin-page-actions">
               {tab === 'home' ? (
+                <div className="page-stat" role="status">
+                  <span className="page-stat__label">Total items</span>
+                  <strong className="page-stat__value">{items.length}</strong>
+                </div>
+              ) : null}
+              {pageStatus ? (
+                <StatusBadge
+                  tone={pageStatus.tone}
+                  label={pageStatus.label}
+                  title={pageStatus.title}
+                />
+              ) : null}
+              {tab === 'ios' ? (
                 <button
                   type="button"
                   className="btn-primary"
-                  onClick={() => setTab('upload')}
+                  onClick={() => openUpload(IOS_CATEGORY.name)}
                 >
                   <i className="fas fa-cloud-arrow-up" aria-hidden="true" />
                   Upload
+                </button>
+              ) : null}
+              {tab === 'live' ? (
+                <button
+                  type="button"
+                  className="btn-primary"
+                  onClick={() => openUpload(LIVE_CATEGORY.name)}
+                >
+                  <i className="fas fa-film" aria-hidden="true" />
+                  Upload video
                 </button>
               ) : null}
             </div>
@@ -283,7 +343,6 @@ export default function App() {
             <WallpaperList
               items={items}
               onChange={setItems}
-              onUploadClick={() => setTab('upload')}
             />
           ) : null}
 
@@ -292,19 +351,23 @@ export default function App() {
               items={items}
               categoryName={IOS_CATEGORY.name}
               onChange={setItems}
+              onUploadClick={() => openUpload(IOS_CATEGORY.name)}
             />
           ) : null}
 
-          {tab === 'fourK' ? (
+          {tab === 'live' ? (
             <WallpaperList
               items={items}
-              categoryName={FOUR_K_CATEGORY.name}
+              categoryName={LIVE_CATEGORY.name}
               onChange={setItems}
+              onUploadClick={() => openUpload(LIVE_CATEGORY.name)}
             />
           ) : null}
 
           {tab === 'upload' ? (
             <WallpaperForm
+              key={uploadCategory}
+              initialCategory={uploadCategory}
               onCreated={(record) => {
                 setItems((prev) =>
                   prev.some((item) => item.id === record.id) ? prev : [record, ...prev],
@@ -314,7 +377,11 @@ export default function App() {
             />
           ) : null}
 
-          {tab === 'settings' ? <SettingsPanel /> : null}
+          {tab === 'intro' ? <IntroPanel onStatusChange={onPageStatusChange} /> : null}
+
+          {tab === 'settings' ? <ConfigPanel onStatusChange={onPageStatusChange} /> : null}
+
+          {tab === 'ads' ? <SettingsPanel onStatusChange={onPageStatusChange} /> : null}
         </section>
       </main>
     </div>

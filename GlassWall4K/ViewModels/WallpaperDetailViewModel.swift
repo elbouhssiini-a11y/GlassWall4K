@@ -42,7 +42,11 @@ final class WallpaperDetailViewModel {
         defer { isDownloading = false }
 
         do {
-            try await WallpaperMediaService.saveToPhotos(from: wallpaper.imageURL)
+            if let videoURL = wallpaper.videoURL {
+                try await WallpaperMediaService.saveVideoToPhotos(from: videoURL)
+            } else {
+                try await WallpaperMediaService.saveToPhotos(from: wallpaper.imageURL)
+            }
             UINotificationFeedbackGenerator().notificationOccurred(.success)
             statusMessage = "Saved to Photos"
             AdsManager.shared.recordDownloadAndMaybeShowInterstitial(
@@ -62,9 +66,11 @@ final class WallpaperDetailViewModel {
         statusMessage = "Preparing share…"
 
         do {
+            let mediaURL = wallpaper.videoURL ?? wallpaper.imageURL
             let file = try await WallpaperMediaService.temporaryShareFile(
-                from: wallpaper.imageURL,
-                titled: wallpaper.title
+                from: mediaURL,
+                titled: wallpaper.title,
+                isVideo: wallpaper.isLive
             )
             shareItems = [file]
             isSharePresented = true

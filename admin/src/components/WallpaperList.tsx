@@ -43,7 +43,6 @@ export function WallpaperList({ items, categoryName, onChange, onUploadClick }: 
 
   async function persistOrder(nextCategoryItems: WallpaperRecord[]) {
     if (showAll) return
-    // Keep the dragged array order; only assign new sortOrder ranks.
     const rankedLocal = withRankOrder(nextCategoryItems)
     setOptimistic(rankedLocal)
     setBusyOrder(true)
@@ -64,7 +63,6 @@ export function WallpaperList({ items, categoryName, onChange, onUploadClick }: 
         )
       }
       onChange(ranked)
-      // Keep optimistic until parent items reflect the new order.
       setOptimistic(null)
     } catch (err) {
       show(err instanceof Error ? err.message : 'Could not save order.', 'error')
@@ -80,11 +78,16 @@ export function WallpaperList({ items, categoryName, onChange, onUploadClick }: 
     const from = list.findIndex((item) => item.id === fromId)
     const to = list.findIndex((item) => item.id === toId)
     if (from < 0 || to < 0) return
-    ;[list[from], list[to]] = [list[to], list[from]]
+    const [moved] = list.splice(from, 1)
+    if (!moved) return
+    list.splice(to, 0, moved)
     void persistOrder(list)
   }
 
   async function handleRemove(item: WallpaperRecord) {
+    const ok = window.confirm(`Delete “${item.title}”? This cannot be undone.`)
+    if (!ok) return
+
     clear()
     setBusyId(item.id)
 
@@ -156,13 +159,19 @@ export function WallpaperList({ items, categoryName, onChange, onUploadClick }: 
     <section className="catalog">
       {toast ? <Toast message={toast.message} variant={toast.variant} /> : null}
 
-      <div className="catalog__bar">
-        <p className="catalog__count">
-          {working.length === 1 ? '1 item' : `${working.length} items`}
-          {canDrag ? <span className="catalog__hint"> · drag to swap</span> : null}
-        </p>
-        {busyOrder ? <p className="catalog__saving">Saving…</p> : null}
-      </div>
+      {!showAll || busyOrder ? (
+        <div className="catalog__bar">
+          {!showAll ? (
+            <p className="catalog__count">
+              {working.length === 1 ? '1 item' : `${working.length} items`}
+              {canDrag ? <span className="catalog__hint"> · drag to reorder</span> : null}
+            </p>
+          ) : (
+            <span />
+          )}
+          {busyOrder ? <p className="catalog__saving">Saving…</p> : null}
+        </div>
+      ) : null}
 
       {working.length === 0 ? (
         <div className="empty-state">

@@ -36,6 +36,16 @@ struct FavoritesView: View {
         .background {
             GlassScreenBackground()
         }
+        .task {
+            MediaCache.prefetch(wallpapers: FavoritesStore.shared.wallpapers)
+        }
+        .navigationDestination(for: Wallpaper.self) { wallpaper in
+            WallpaperDetailView(
+                wallpaper: wallpaper,
+                wallpapers: FavoritesStore.shared.wallpapers,
+                namespace: namespace
+            )
+        }
     }
 
     private func favoritesGrid(_ wallpapers: [Wallpaper]) -> some View {
@@ -46,7 +56,7 @@ struct FavoritesView: View {
                         GridWallpaperCard(
                             wallpaper: wallpaper,
                             namespace: namespace,
-                            cornerRadius: 26
+                            playsLivePreview: false
                         )
                     }
                     .buttonStyle(WallpaperPressButtonStyle())
@@ -70,9 +80,6 @@ private struct FavoritesPreviewHost: View {
             FavoritesView(namespace: namespace)
                 .navigationTitle("Favorites")
                 .navigationBarTitleDisplayMode(.large)
-                .navigationDestination(for: Wallpaper.self) { wallpaper in
-                    WallpaperDetailView(wallpaper: wallpaper, namespace: namespace)
-                }
         }
     }
 }

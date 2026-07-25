@@ -16,7 +16,7 @@ enum AppTab: String, CaseIterable, Identifiable, Hashable {
     var title: String {
         switch self {
         case .ios: "iOS 27"
-        case .fourK: "4K"
+        case .fourK: "Live"
         case .favorites: "Favorites"
         case .settings: "Settings"
         }
@@ -25,7 +25,7 @@ enum AppTab: String, CaseIterable, Identifiable, Hashable {
     var systemImage: String {
         switch self {
         case .ios: "iphone"
-        case .fourK: "4k.tv"
+        case .fourK: "play.circle"
         case .favorites: "heart"
         case .settings: "gearshape"
         }
@@ -34,7 +34,7 @@ enum AppTab: String, CaseIterable, Identifiable, Hashable {
     var selectedSystemImage: String {
         switch self {
         case .ios: "iphone"
-        case .fourK: "4k.tv"
+        case .fourK: "play.circle.fill"
         case .favorites: "heart.fill"
         case .settings: "gearshape.fill"
         }

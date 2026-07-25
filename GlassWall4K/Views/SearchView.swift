@@ -5,11 +5,11 @@
 
 import SwiftUI
 
-/// 4K Wallpapers tab (legacy filename kept for Xcode project references).
+/// Live Wallpapers tab (legacy filename kept for Xcode project references).
 struct SearchView: View {
     let namespace: Namespace.ID
 
-    @State private var viewModel = SearchViewModel(category: .fourKWallpapers)
+    @State private var viewModel = SearchViewModel(category: .liveWallpapers)
 
     private let horizontalInset = GlassMetrics.horizontalInset
     private let gridSpacing = GlassMetrics.gridSpacing
@@ -33,9 +33,18 @@ struct SearchView: View {
         }
         .task {
             await viewModel.load()
+            MediaCache.prefetch(wallpapers: viewModel.results)
         }
         .refreshable {
             await viewModel.load()
+            MediaCache.prefetch(wallpapers: viewModel.results)
+        }
+        .navigationDestination(for: Wallpaper.self) { wallpaper in
+            WallpaperDetailView(
+                wallpaper: wallpaper,
+                wallpapers: viewModel.results,
+                namespace: namespace
+            )
         }
     }
 
@@ -51,9 +60,9 @@ struct SearchView: View {
                 .frame(minHeight: 420)
         } else if viewModel.results.isEmpty {
             EmptyStateView(
-                title: "No 4K Wallpapers",
-                message: "Upload some 4K Wallpapers from the admin panel.",
-                systemName: "4k.tv"
+                title: "No Live Wallpapers",
+                message: "Upload some Live Wallpapers from the admin panel.",
+                systemName: "play.circle"
             )
             .frame(minHeight: 420)
         } else {
@@ -63,7 +72,7 @@ struct SearchView: View {
                         GridWallpaperCard(
                             wallpaper: wallpaper,
                             namespace: namespace,
-                            cornerRadius: 24
+                            playsLivePreview: false
                         )
                     }
                     .buttonStyle(WallpaperPressButtonStyle())
@@ -90,11 +99,8 @@ private struct SearchPreviewHost: View {
     var body: some View {
         NavigationStack {
             SearchView(namespace: namespace)
-                .navigationTitle("4K Wallpapers")
+                .navigationTitle("Live Wallpapers")
                 .toolbarTitleDisplayMode(.inlineLarge)
-                .navigationDestination(for: Wallpaper.self) { wallpaper in
-                    WallpaperDetailView(wallpaper: wallpaper, namespace: namespace)
-                }
         }
     }
 }

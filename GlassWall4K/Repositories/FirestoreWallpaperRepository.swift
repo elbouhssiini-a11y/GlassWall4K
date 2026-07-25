@@ -143,12 +143,15 @@ private struct FirestoreDocument: Decodable {
 
         let createdAt = WallpaperDateParser.parse(fields.string("createdAt")) ?? Date()
         let sortOrder = fields.int("sortOrder") ?? 9999
+        let videoURLString = fields.string("videoURL")?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let videoURL = (videoURLString?.isEmpty == false) ? URL(string: videoURLString!) : nil
 
         return Wallpaper(
             id: fields.string("id") ?? fallbackID,
             title: title,
             imageURL: imageURL,
             thumbnailURL: thumbnailURL,
+            videoURL: videoURL,
             category: fields.string("category") ?? Category.iosWallpapers.name,
             resolution: fields.string("resolution") ?? "4K",
             featured: fields.bool("featured") ?? false,

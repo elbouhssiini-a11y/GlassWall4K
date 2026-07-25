@@ -46,7 +46,7 @@ struct GlassCategoryChip: View {
 #Preview {
     HStack {
         GlassCategoryChip(title: "iOS 27", symbolName: "iphone", isSelected: true)
-        GlassCategoryChip(title: "4K", symbolName: "4k.tv", isSelected: false)
+        GlassCategoryChip(title: "Live", symbolName: "play.circle", isSelected: false)
     }
     .padding()
     .background(GlassScreenBackground())

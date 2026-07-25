@@ -69,7 +69,7 @@ extension GlassNavigationBar where Leading == EmptyView, Trailing == EmptyView {
 
 #Preview {
     VStack {
-        GlassNavigationBar(title: "Wallora Glass", subtitle: "4K Wallpapers") {
+        GlassNavigationBar(title: "Wallora Glass", subtitle: "Live Wallpapers") {
             Image(systemName: "chevron.backward")
                 .frame(width: 28, height: 28)
         } trailing: {

@@ -113,6 +113,7 @@ enum MockWallpaperData {
             title: title,
             imageURL: URL(string: "\(base)/full.jpg")!,
             thumbnailURL: URL(string: "\(base)/thumb.jpg")!,
+            videoURL: nil,
             category: category,
             resolution: resolution,
             featured: featured,

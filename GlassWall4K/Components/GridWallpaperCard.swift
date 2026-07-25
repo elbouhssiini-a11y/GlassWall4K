@@ -9,6 +9,10 @@ struct GridWallpaperCard: View {
     let wallpaper: Wallpaper
     var namespace: Namespace.ID?
     var cornerRadius: CGFloat = GlassMetrics.cardCornerRadius
+    /// Play muted looping preview for Live items (visible cells only).
+    var playsLivePreview: Bool = true
+
+    @State private var isVisible = false
 
     var body: some View {
         Color.clear
@@ -21,20 +25,10 @@ struct GridWallpaperCard: View {
                         endPoint: .bottomTrailing
                     )
 
-                    AsyncImage(url: wallpaper.thumbnailURL) { phase in
-                        switch phase {
-                        case .success(let image):
-                            image
-                                .resizable()
-                                .scaledToFill()
-                        case .failure:
-                            EmptyView()
-                        case .empty:
-                            ProgressView()
-                                .tint(.white.opacity(0.8))
-                        @unknown default:
-                            EmptyView()
-                        }
+                    CachedRemoteImage(url: wallpaper.thumbnailURL)
+
+                    if playsLivePreview, let videoURL = wallpaper.videoURL, isVisible {
+                        LoopingVideoPlayer(url: videoURL, isActive: isVisible)
                     }
 
                     LinearGradient(
@@ -46,6 +40,17 @@ struct GridWallpaperCard: View {
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
+                }
+            }
+            .overlay(alignment: .topLeading) {
+                if wallpaper.isLive {
+                    Label("LIVE", systemImage: "play.fill")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 5)
+                        .background(.black.opacity(0.45), in: Capsule())
+                        .padding(10)
                 }
             }
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
@@ -71,7 +76,9 @@ struct GridWallpaperCard: View {
                 namespace: namespace,
                 cornerRadius: cornerRadius
             ))
-            .accessibilityLabel(wallpaper.title)
+            .onAppear { isVisible = true }
+            .onDisappear { isVisible = false }
+            .accessibilityLabel(wallpaper.isLive ? "\(wallpaper.title), Live" : wallpaper.title)
     }
 }
 
@@ -94,14 +101,5 @@ private struct HeroTransitionSourceModifier: ViewModifier {
         } else {
             content
         }
-    }
-}
-
-struct WallpaperPressButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed ? 0.955 : 1)
-            .opacity(configuration.isPressed ? 0.92 : 1)
-            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
     }
 }

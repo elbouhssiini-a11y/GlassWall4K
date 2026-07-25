@@ -17,6 +17,21 @@ struct AppAdSettings: Sendable, Equatable {
     var interstitialAdUnitId: String
     var interstitialEveryNOpens: Int
     var interstitialEveryNDownloads: Int
+    /// Seconds in background before App Open may show on return.
+    var appOpenMinBackgroundSeconds: Int
+
+    var introEnabled: Bool
+    var introShowEveryLaunch: Bool
+    var introVersion: Int
+    var introTitle: String
+    var introSubtitle: String
+    var introImageURL: String
+    var introVideoURL: String
+    /// Max seconds to play before entering app. 0 = play until natural end.
+    var introMaxSeconds: Int
+    var introButtonTitle: String
+    /// ISO-8601 from panel — used to pick newest remote source.
+    var updatedAt: String
 
     static let iosTestUnits = (
         appOpen: "ca-app-pub-3940256099942544/5575463023",
@@ -28,8 +43,19 @@ struct AppAdSettings: Sendable, Equatable {
         adsMode: .test,
         appOpenAdUnitId: "",
         interstitialAdUnitId: "",
-        interstitialEveryNOpens: 3,
-        interstitialEveryNDownloads: 3
+        interstitialEveryNOpens: 4,
+        interstitialEveryNDownloads: 3,
+        appOpenMinBackgroundSeconds: 2,
+        introEnabled: false,
+        introShowEveryLaunch: false,
+        introVersion: 1,
+        introTitle: "Welcome to Wallora Glass",
+        introSubtitle: "Browse Live & iOS wallpapers. Save favorites and download in one tap.",
+        introImageURL: "",
+        introVideoURL: "",
+        introMaxSeconds: 0,
+        introButtonTitle: "Get Started",
+        updatedAt: ""
     )
 
     var activeAppOpenUnitId: String {
@@ -42,5 +68,17 @@ struct AppAdSettings: Sendable, Equatable {
         guard adsEnabled else { return "" }
         if adsMode == .test { return Self.iosTestUnits.interstitial }
         return interstitialAdUnitId.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    var resolvedIntroImageURL: URL? {
+        let raw = introImageURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !raw.isEmpty else { return nil }
+        return URL(string: raw)
+    }
+
+    var resolvedIntroVideoURL: URL? {
+        let raw = introVideoURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !raw.isEmpty else { return nil }
+        return URL(string: raw)
     }
 }

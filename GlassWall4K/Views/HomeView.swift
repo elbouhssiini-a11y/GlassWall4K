@@ -32,9 +32,18 @@ struct HomeView: View {
         }
         .task {
             await viewModel.loadHome()
+            MediaCache.prefetch(wallpapers: viewModel.latestWallpapers, videoLimit: 0)
         }
         .refreshable {
             await viewModel.loadHome()
+            MediaCache.prefetch(wallpapers: viewModel.latestWallpapers, videoLimit: 0)
+        }
+        .navigationDestination(for: Wallpaper.self) { wallpaper in
+            WallpaperDetailView(
+                wallpaper: wallpaper,
+                wallpapers: viewModel.latestWallpapers,
+                namespace: namespace
+            )
         }
     }
 
@@ -61,7 +70,8 @@ struct HomeView: View {
                     NavigationLink(value: wallpaper) {
                         GridWallpaperCard(
                             wallpaper: wallpaper,
-                            namespace: namespace
+                            namespace: namespace,
+                            playsLivePreview: false
                         )
                     }
                     .buttonStyle(WallpaperPressButtonStyle())
@@ -91,9 +101,6 @@ private struct HomePreviewHost: View {
                 .navigationTitle("iOS 27")
                 .toolbarTitleDisplayMode(.inlineLarge)
                 .toolbarBackground(.hidden, for: .navigationBar)
-                .navigationDestination(for: Wallpaper.self) { wallpaper in
-                    WallpaperDetailView(wallpaper: wallpaper, namespace: namespace)
-                }
         }
     }
 }

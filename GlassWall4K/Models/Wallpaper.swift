@@ -10,12 +10,16 @@ struct Wallpaper: Identifiable, Hashable, Codable, Sendable {
     let title: String
     let imageURL: URL
     let thumbnailURL: URL
+    /// Present for Live Wallpapers (looping video). Nil for static images.
+    let videoURL: URL?
     let category: String
     let resolution: String
     let featured: Bool
     /// Catalog rank. Lower = higher (#1 first). Missing/legacy defaults to a large value.
     let sortOrder: Int
     let createdAt: Date
+
+    var isLive: Bool { videoURL != nil }
 }
 
 extension Array where Element == Wallpaper {

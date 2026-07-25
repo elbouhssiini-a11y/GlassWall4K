@@ -6,10 +6,10 @@
 import Foundation
 
 enum GlassMetrics {
-    static let horizontalInset: CGFloat = 20
+    static let horizontalInset: CGFloat = 4
     static let sectionSpacing: CGFloat = 22
-    static let gridSpacing: CGFloat = 16
-    static let cardRadius: CGFloat = 28
+    static let gridSpacing: CGFloat = 4
+    static let cardRadius: CGFloat = 16
     static let cardCornerRadius: CGFloat = cardRadius
     static let sectionCornerRadius: CGFloat = 28
     static let chipCornerRadius: CGFloat = 100
