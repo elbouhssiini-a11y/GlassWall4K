@@ -361,6 +361,37 @@ export function IntroPanel({ onStatusChange }: Props) {
                   <i aria-hidden="true" />
                 </label>
               </div>
+              <div className="intro-card__row intro-card__row--nested">
+                <span>
+                  <strong>Intro version</strong>
+                  <em>Bump to force intro again for users who dismissed it</em>
+                </span>
+                <div className="intro-version">
+                  <button
+                    type="button"
+                    className="intro-version__btn"
+                    disabled={disabled || settings.introVersion <= 1}
+                    aria-label="Decrease intro version"
+                    onClick={() =>
+                      patch({ introVersion: Math.max(1, settings.introVersion - 1) }, true)
+                    }
+                  >
+                    −
+                  </button>
+                  <strong className="intro-version__value" aria-live="polite">
+                    {settings.introVersion}
+                  </strong>
+                  <button
+                    type="button"
+                    className="intro-version__btn"
+                    disabled={disabled}
+                    aria-label="Bump intro version"
+                    onClick={() => patch({ introVersion: settings.introVersion + 1 }, true)}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div className="intro-card__block">

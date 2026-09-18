@@ -147,6 +147,7 @@ export function withCategoryRankOrder(
   const claimed = new Set<string>()
 
   for (const name of categoryNames) {
+    // Preserve the caller’s relative order within each category (drag / upload order).
     const group = items
       .filter((item) => {
         if (claimed.has(item.id)) return false
@@ -160,6 +161,22 @@ export function withCategoryRankOrder(
   const orphans = items.filter((item) => !claimed.has(item.id) && !known.has(item.category))
   ranked.push(...withRankOrder(orphans))
   return ranked
+}
+
+/** True when any category is not ranked 1…n independently. */
+export function needsCategoryRankFix(
+  items: WallpaperRecord[],
+  categoryNames: string[],
+): boolean {
+  for (const name of categoryNames) {
+    const group = sortWallpapers(
+      items.filter((item) => matchesCategoryForRank(item.category, name)),
+    )
+    for (let i = 0; i < group.length; i += 1) {
+      if (group[i]!.sortOrder !== i + 1) return true
+    }
+  }
+  return false
 }
 
 function matchesCategoryForRank(itemCategory: string, categoryName: string): boolean {

@@ -7,18 +7,19 @@ import { StatusBadge, type PageStatus } from './components/StatusBadge'
 import { Toast } from './components/Toast'
 import { WallpaperForm } from './components/WallpaperForm'
 import { WallpaperList } from './components/WallpaperList'
-import { LIVE_CATEGORY, IOS_CATEGORY } from './lib/categories'
+import { LIVE_CATEGORY, IOS_CATEGORY, isIosCategory, isLiveCategory } from './lib/categories'
 import {
   isAdminUser,
   listWallpapers,
   loginWithEmail,
   loginWithGoogle,
   logout,
+  removeWallpapers,
   saveWallpaperOrder,
   watchAuth,
 } from './lib/firebase'
 import { replaceManifestWallpapers } from './lib/github'
-import { withCategoryRankOrder, type WallpaperRecord } from './lib/types'
+import { withCategoryRankOrder, needsCategoryRankFix, type WallpaperRecord } from './lib/types'
 import './App.css'
 
 type HomeTab = 'home' | 'ios' | 'live' | 'upload' | 'intro' | 'settings' | 'ads'
@@ -71,7 +72,7 @@ export default function App() {
         return {
           kicker: 'Library',
           title: 'All Wallpapers',
-          subtitle: 'Every wallpaper across iOS 27 Wallpapers and Live Wallpapers.',
+          subtitle: 'Browse, search and filter every wallpaper across iOS 27 and Live catalogs.',
         }
       case 'ios':
         return {
@@ -101,7 +102,7 @@ export default function App() {
         return {
           kicker: 'Workspace',
           title: 'Settings',
-          subtitle: 'Configure content collections, GitHub assets and application rules.',
+          subtitle: 'Workspace status, content collections, GitHub assets and upload rules.',
         }
       case 'ads':
         return {
@@ -129,8 +130,46 @@ export default function App() {
     setLoading(true)
     setBootError(null)
     listWallpapers()
-      .then((data) => {
-        if (alive) setItems(data)
+      .then(async (data) => {
+        if (!alive) return
+        const categoryNames = [IOS_CATEGORY.name, LIVE_CATEGORY.name]
+
+        // Drop wallpapers that are neither iOS 27 nor Live (legacy orphans).
+        const orphans = data.filter(
+          (item) => !isIosCategory(item.category) && !isLiveCategory(item.category),
+        )
+        let kept = data
+        if (orphans.length > 0) {
+          await removeWallpapers(orphans.map((item) => item.id))
+          kept = data.filter(
+            (item) => isIosCategory(item.category) || isLiveCategory(item.category),
+          )
+        }
+
+        const ranked = needsCategoryRankFix(kept, categoryNames)
+          ? withCategoryRankOrder(
+              [...kept].sort((a, b) => {
+                if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder
+                return b.createdAt.localeCompare(a.createdAt)
+              }),
+              categoryNames,
+            )
+          : kept
+
+        const changed =
+          orphans.length > 0 || needsCategoryRankFix(kept, categoryNames)
+        if (!changed) {
+          setItems(kept)
+          return
+        }
+
+        try {
+          const saved = await saveWallpaperOrder(ranked)
+          await replaceManifestWallpapers(saved)
+          if (alive) setItems(saved)
+        } catch {
+          if (alive) setItems(ranked)
+        }
       })
       .catch((err: unknown) => {
         if (alive) {
@@ -313,6 +352,16 @@ export default function App() {
                   title={pageStatus.title}
                 />
               ) : null}
+              {tab === 'home' ? (
+                <button
+                  type="button"
+                  className="btn-primary"
+                  onClick={() => openUpload(IOS_CATEGORY.name)}
+                >
+                  <i className="fas fa-cloud-arrow-up" aria-hidden="true" />
+                  Upload
+                </button>
+              ) : null}
               {tab === 'ios' ? (
                 <button
                   type="button"
@@ -343,6 +392,7 @@ export default function App() {
             <WallpaperList
               items={items}
               onChange={setItems}
+              onUploadClick={() => openUpload(IOS_CATEGORY.name)}
             />
           ) : null}
 
@@ -379,7 +429,13 @@ export default function App() {
 
           {tab === 'intro' ? <IntroPanel onStatusChange={onPageStatusChange} /> : null}
 
-          {tab === 'settings' ? <ConfigPanel onStatusChange={onPageStatusChange} /> : null}
+          {tab === 'settings' ? (
+            <ConfigPanel
+              items={items}
+              onNavigate={setTab}
+              onStatusChange={onPageStatusChange}
+            />
+          ) : null}
 
           {tab === 'ads' ? <SettingsPanel onStatusChange={onPageStatusChange} /> : null}
         </section>

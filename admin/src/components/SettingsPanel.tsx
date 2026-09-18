@@ -66,7 +66,7 @@ export function SettingsPanel({ onStatusChange }: Props) {
         clearTimeout(saveTimerRef.current)
         saveTimerRef.current = null
         if (readyRef.current) {
-          void saveAppSettings(latestRef.current).catch(() => {
+          void saveAppSettings(latestRef.current, { mirror: true }).catch(() => {
             /* best-effort flush on leave */
           })
         }
@@ -78,13 +78,13 @@ export function SettingsPanel({ onStatusChange }: Props) {
     setBusy(true)
     clear()
     setSaveError(null)
-    show('Saving…', 'loading')
+    show('Saving + publishing to app…', 'loading')
     try {
-      const saved = await saveAppSettings(next)
+      const saved = await saveAppSettings(next, { mirror: true })
       setSettings(saved)
       latestRef.current = saved
       setSaveError(null)
-      show('Saved.')
+      show('Saved + published to app.')
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Could not save settings.'
       setSaveError(message)
@@ -92,6 +92,11 @@ export function SettingsPanel({ onStatusChange }: Props) {
     } finally {
       setBusy(false)
     }
+  }
+
+  async function publishToApp() {
+    if (loading || busy) return
+    await persist(latestRef.current)
   }
 
   function scheduleSave(next: AppSettings, immediate = false) {
@@ -140,6 +145,19 @@ export function SettingsPanel({ onStatusChange }: Props) {
     <div className="ads-mgmt">
       {loading ? <Toast message="Loading settings…" variant="loading" /> : null}
       {toast ? <Toast message={toast.message} variant={toast.variant} /> : null}
+
+      <div className="ads-mgmt__toolbar">
+        <p>Changes publish to GitHub <code>settings.json</code> automatically.</p>
+        <button
+          type="button"
+          className="intro-stage__publish intro-stage__publish--solid"
+          disabled={disabled}
+          onClick={() => void publishToApp()}
+        >
+          <i className="fas fa-cloud-arrow-up" aria-hidden="true" />
+          Publish to app
+        </button>
+      </div>
 
       <section className="ads-mgmt__card ads-mgmt__card--status">
         <header className="ads-mgmt__card-head">
@@ -337,6 +355,11 @@ export function SettingsPanel({ onStatusChange }: Props) {
           </div>
         </section>
       </div>
+
+      <p className="ads-mgmt__note">
+        Every change publishes to GitHub <code>settings.json</code>. Force-quit the iOS app and
+        reopen to pick it up.
+      </p>
     </div>
   )
 }

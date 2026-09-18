@@ -104,9 +104,9 @@ export async function updateWallpaperFields(
 }
 
 export async function saveWallpaperOrder(ordered: WallpaperRecord[]): Promise<WallpaperRecord[]> {
-  const ranked = ordered.map((item, index) =>
-    normalizeWallpaper({ ...item, sortOrder: index + 1 }),
-  )
+  // Keep each item's sortOrder as provided (category-local ranks). Do not
+  // renumber the full library 1…n — that would mix iOS / Live catalogs.
+  const ranked = ordered.map((item) => normalizeWallpaper(item))
 
   // Firestore batches max 500
   for (let i = 0; i < ranked.length; i += 450) {
@@ -123,6 +123,18 @@ export async function saveWallpaperOrder(ordered: WallpaperRecord[]): Promise<Wa
 
 export async function removeWallpaper(id: string): Promise<void> {
   await deleteDoc(doc(db, 'wallpapers', id))
+}
+
+export async function removeWallpapers(ids: string[]): Promise<void> {
+  if (ids.length === 0) return
+  for (let i = 0; i < ids.length; i += 450) {
+    const chunk = ids.slice(i, i + 450)
+    const batch = writeBatch(db)
+    for (const id of chunk) {
+      batch.delete(doc(db, 'wallpapers', id))
+    }
+    await batch.commit()
+  }
 }
 
 export async function loadAppSettings(): Promise<AppSettings> {
