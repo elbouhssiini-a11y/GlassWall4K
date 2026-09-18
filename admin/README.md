@@ -37,6 +37,9 @@ npm install
 npm run open
 ```
 
+Panel kayfteh ghir 3la `http://127.0.0.1:5180` (port khass b Wallora Glass).
+Ma kayshareach `5173` m3a Admin Panels khrin. Ila `5180` mashghol, Vite kayfaili (`strictPort`) w ma yftehsh projet akhor.
+
 ## GitHub token
 
 Classic PAT w scopes:

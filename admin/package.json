@@ -4,11 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --open",
-    "open": "vite --open",
+    "dev": "vite --open --host 127.0.0.1 --port 5180 --strictPort",
+    "open": "vite --open --host 127.0.0.1 --port 5180 --strictPort",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "preview": "vite preview --open"
+    "preview": "vite preview --open --host 127.0.0.1 --port 4180 --strictPort"
   },
   "dependencies": {
     "firebase": "^12.16.0",
