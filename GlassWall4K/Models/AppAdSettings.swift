@@ -33,10 +33,12 @@ struct AppAdSettings: Sendable, Equatable {
     /// ISO-8601 from panel — used to pick newest remote source.
     var updatedAt: String
 
+    #if DEBUG
     static let iosTestUnits = (
         appOpen: "ca-app-pub-3940256099942544/5575463023",
         interstitial: "ca-app-pub-3940256099942544/4411468910"
     )
+    #endif
 
     static let disabled = AppAdSettings(
         adsEnabled: false,
@@ -60,13 +62,19 @@ struct AppAdSettings: Sendable, Equatable {
 
     var activeAppOpenUnitId: String {
         guard adsEnabled else { return "" }
+        #if DEBUG
         if adsMode == .test { return Self.iosTestUnits.appOpen }
+        #endif
+        guard adsMode == .production else { return "" }
         return appOpenAdUnitId.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     var activeInterstitialUnitId: String {
         guard adsEnabled else { return "" }
+        #if DEBUG
         if adsMode == .test { return Self.iosTestUnits.interstitial }
+        #endif
+        guard adsMode == .production else { return "" }
         return interstitialAdUnitId.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 

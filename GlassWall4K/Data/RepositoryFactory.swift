@@ -6,7 +6,8 @@
 import Foundation
 
 /// Factory for constructing repository implementations.
-/// Priority: Firestore (admin catalog) → GitHub manifest → local mock.
+/// Remote priority: Firestore, then GitHub manifest.
+/// `useRemote: false` stays on local mock for previews and tests.
 enum RepositoryFactory {
     static func makeWallpaperRepository(
         useRemote: Bool = true
@@ -19,7 +20,6 @@ enum RepositoryFactory {
             sources: [
                 FirestoreWallpaperRepository(),
                 GitHubWallpaperRepository(),
-                MockWallpaperRepository(),
             ]
         )
     }

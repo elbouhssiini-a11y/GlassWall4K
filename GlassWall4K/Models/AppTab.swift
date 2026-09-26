@@ -15,7 +15,7 @@ enum AppTab: String, CaseIterable, Identifiable, Hashable {
 
     var title: String {
         switch self {
-        case .ios: "iOS 27"
+        case .ios: "OS 27"
         case .fourK: "Live"
         case .favorites: "Favorites"
         case .settings: "Settings"

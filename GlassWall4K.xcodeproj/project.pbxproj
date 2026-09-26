@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		B4ADMOB00000000000000003 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = B4ADMOB00000000000000002 /* GoogleMobileAds */; };
+		B4UMP0000000000000000003 /* GoogleUserMessagingPlatform in Frameworks */ = {isa = PBXBuildFile; productRef = B4UMP0000000000000000002 /* GoogleUserMessagingPlatform */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -18,6 +19,7 @@
 		B4ADMOB00000000000000010 /* Exceptions for "GlassWall4K" folder in "GlassWall4K" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				"Info-Release.plist",
 				Info.plist,
 			);
 			target = B40FAAD230056C15008FBA84 /* GlassWall4K */;
@@ -41,6 +43,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B4ADMOB00000000000000003 /* GoogleMobileAds in Frameworks */,
+				B4UMP0000000000000000003 /* GoogleUserMessagingPlatform in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -84,6 +87,7 @@
 			name = GlassWall4K;
 			packageProductDependencies = (
 				B4ADMOB00000000000000002 /* GoogleMobileAds */,
+				B4UMP0000000000000000002 /* GoogleUserMessagingPlatform */,
 			);
 			productName = GlassWall4K;
 			productReference = B40FAAD330056C15008FBA84 /* GlassWall4K.app */;
@@ -97,7 +101,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 2660;
-				LastUpgradeCheck = 2660;
+				LastUpgradeCheck = 2700;
 				TargetAttributes = {
 					B40FAAD230056C15008FBA84 = {
 						CreatedOnToolsVersion = 26.6;
@@ -115,6 +119,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				B4ADMOB00000000000000001 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */,
+				B4UMP0000000000000000001 /* XCRemoteSwiftPackageReference "swift-package-manager-google-user-messaging-platform" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = B40FAAD430056C15008FBA84 /* Products */;
@@ -206,6 +211,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -263,6 +269,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -280,8 +287,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = GlassWall4K/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Wallora Glass";
-				INFOPLIST_KEY_GADApplicationIdentifier = "ca-app-pub-3940256099942544~1458002511";
-				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "GlassWall4K saves wallpapers to your Photos library.";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Wallora Glass saves wallpapers to your Photos library.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -319,10 +326,10 @@
 				DEVELOPMENT_TEAM = VMNP3M45X8;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = GlassWall4K/Info.plist;
+				INFOPLIST_FILE = "GlassWall4K/Info-Release.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Wallora Glass";
-				INFOPLIST_KEY_GADApplicationIdentifier = "ca-app-pub-3940256099942544~1458002511";
-				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "GlassWall4K saves wallpapers to your Photos library.";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Wallora Glass saves wallpapers to your Photos library.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -382,6 +389,14 @@
 				minimumVersion = 11.13.0;
 			};
 		};
+		B4UMP0000000000000000001 /* XCRemoteSwiftPackageReference "swift-package-manager-google-user-messaging-platform" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/googleads/swift-package-manager-google-user-messaging-platform.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.7.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -389,6 +404,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = B4ADMOB00000000000000001 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */;
 			productName = GoogleMobileAds;
+		};
+		B4UMP0000000000000000002 /* GoogleUserMessagingPlatform */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B4UMP0000000000000000001 /* XCRemoteSwiftPackageReference "swift-package-manager-google-user-messaging-platform" */;
+			productName = GoogleUserMessagingPlatform;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -98,7 +98,7 @@ private struct HomePreviewHost: View {
     var body: some View {
         NavigationStack {
             HomeView(namespace: namespace)
-                .navigationTitle("iOS 27")
+                .navigationTitle("OS 27")
                 .toolbarTitleDisplayMode(.inlineLarge)
                 .toolbarBackground(.hidden, for: .navigationBar)
         }

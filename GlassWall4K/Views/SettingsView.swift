@@ -9,8 +9,10 @@ import SwiftUI
 struct SettingsView: View {
     @State private var viewModel = SettingsViewModel()
     @State private var showsShareSheet = false
-    @State private var showsPrivacy = false
     @Environment(\.requestReview) private var requestReview
+    @Environment(\.openURL) private var openURL
+
+    private let privacyPolicyURL = URL(string: "https://sites.google.com/view/privacy-policy-elbouhssini")!
 
     private var appVersion: String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
@@ -61,7 +63,7 @@ struct SettingsView: View {
                         systemName: "hand.raised.fill",
                         tint: .gray
                     ) {
-                        showsPrivacy = true
+                        openURL(privacyPolicyURL)
                     }
                     .settingsRowInsets()
 
@@ -95,45 +97,6 @@ struct SettingsView: View {
         }
         .sheet(isPresented: $showsShareSheet) {
             ActivityShareSheet(items: viewModel.shareItems)
-        }
-        .sheet(isPresented: $showsPrivacy) {
-            PrivacyPolicySheet()
-        }
-    }
-}
-
-private struct PrivacyPolicySheet: View {
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                Text(
-                    """
-                    Wallora Glass lets you browse and save wallpapers to Photos.
-
-                    The catalog is loaded from the cloud. Images may be cached on your device for faster loading.
-
-                    We do not require an account. If ads are enabled, they are served by Google AdMob.
-
-                    You can free local image cache anytime with Clear Cache in Settings.
-                    """
-                )
-                .font(.body)
-                .foregroundStyle(.primary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(20)
-            }
-            .background {
-                GlassScreenBackground()
-            }
-            .navigationTitle("Privacy Policy")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }
-                }
-            }
         }
     }
 }

@@ -236,7 +236,10 @@ export default function App() {
     return (
       <div className="shell--gate">
         <form className="gate-card" onSubmit={onEmailLogin}>
-          <p className="brand-mark">Wallora Glass</p>
+          <div className="gate-brand">
+            <img className="app-icon" src="/app-icon.png" alt="" />
+            <p className="brand-mark">Wallora Glass</p>
+          </div>
           <h1>Admin</h1>
           <p className="lede">Sign in to manage wallpapers.</p>
 
@@ -290,8 +293,11 @@ export default function App() {
     <div className="container">
       <aside className="sidebar">
         <div className="sidebar-brand">
-          <h2>Wallora Glass</h2>
-          <div className="sidebar-admin-status">Logged In</div>
+          <img className="app-icon" src="/app-icon.png" alt="" />
+          <div>
+            <h2>Wallora Glass</h2>
+            <div className="sidebar-admin-status">Logged In</div>
+          </div>
         </div>
 
         <nav aria-label="Main">

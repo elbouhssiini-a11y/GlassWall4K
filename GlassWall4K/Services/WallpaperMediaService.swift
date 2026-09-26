@@ -15,10 +15,10 @@ enum WallpaperMediaError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .invalidImage: "Image ma salatch."
-        case .photoAccessDenied: "Authorization Photos ma3titch. 7el Settings."
-        case .downloadFailed: "Download fail."
-        case .saveFailed: "Save f Photos fail."
+        case .invalidImage: "The image could not be loaded."
+        case .photoAccessDenied: "Photo access was denied. Open Settings to allow it."
+        case .downloadFailed: "The download failed."
+        case .saveFailed: "Could not save to Photos."
         }
     }
 }

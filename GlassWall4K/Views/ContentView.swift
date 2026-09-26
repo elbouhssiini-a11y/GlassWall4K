@@ -22,7 +22,7 @@ struct ContentView: View {
         TabView(selection: $selectedTab) {
             NavigationStack(path: $iosPath) {
                 HomeView(namespace: iosTransition)
-                    .navigationTitle("iOS 27")
+                    .navigationTitle("OS 27")
                     .toolbarTitleDisplayMode(.inlineLarge)
                     .toolbarBackground(.hidden, for: .navigationBar)
             }

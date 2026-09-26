@@ -61,12 +61,22 @@ final class AdsManager: NSObject, ObservableObject {
         isStarting = true
         defer { isStarting = false }
 
-        await Self.startMobileAds()
+        await ConsentManager.shared.gatherConsentIfNeeded()
+
+        if Self.hasAdMobApplicationID, ConsentManager.shared.canRequestAds {
+            Self.configureDebugTestDevice()
+            await Self.startMobileAds()
+        }
         FirestoreAppSettingsRepository.invalidateCache()
         await refreshSettings()
         isReady = true
 
-        guard !deferAppOpen else { return }
+        guard !deferAppOpen else {
+            logAppOpen(
+                "deferred inside start ad=\(appOpenAd != nil) enabled=\(settings.adsEnabled) mode=\(settings.adsMode.rawValue) canRequestAds=\(ConsentManager.shared.canRequestAds)"
+            )
+            return
+        }
 
         // Wait for SwiftUI window / root VC — App Open needs a presenter.
         try? await Task.sleep(nanoseconds: 900_000_000)
@@ -75,7 +85,13 @@ final class AdsManager: NSObject, ObservableObject {
 
     /// Cold-start App Open after intro/main UI is ready.
     func presentLaunchAppOpenIfNeeded() {
-        guard isReady else { return }
+        guard isReady else {
+            logAppOpen("presentLaunch skipped isReady=false")
+            return
+        }
+        logAppOpen(
+            "presentLaunch scheduled ad=\(appOpenAd != nil) pending=\(appOpenOpportunityPending) enabled=\(settings.adsEnabled) mode=\(settings.adsMode.rawValue) canRequestAds=\(ConsentManager.shared.canRequestAds)"
+        )
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: 450_000_000)
             requestAppOpenOnce()
@@ -91,7 +107,12 @@ final class AdsManager: NSObject, ObservableObject {
     func refreshSettings() async {
         let next = await FirestoreAppSettingsRepository.load()
         settings = next
-        if next.adsEnabled {
+        #if DEBUG
+        print(
+            "[Ads] settings mode=\(next.adsMode.rawValue) enabled=\(next.adsEnabled) appOpen=\(next.activeAppOpenUnitId) interstitial=\(next.activeInterstitialUnitId) everyOpens=\(next.interstitialEveryNOpens) everyDownloads=\(next.interstitialEveryNDownloads) backgroundSeconds=\(next.appOpenMinBackgroundSeconds) consent=\(ConsentManager.shared.canRequestAds) hasAppID=\(Self.hasAdMobApplicationID)"
+        )
+        #endif
+        if next.adsEnabled, Self.hasAdMobApplicationID, ConsentManager.shared.canRequestAds {
             if !next.activeInterstitialUnitId.isEmpty {
                 await loadInterstitial()
             } else {
@@ -104,6 +125,11 @@ final class AdsManager: NSObject, ObservableObject {
                 appOpenOpportunityPending = false
             }
         } else {
+            #if DEBUG
+            print(
+                "[Ads] Skipping load enabled=\(next.adsEnabled) hasAppID=\(Self.hasAdMobApplicationID) consent=\(ConsentManager.shared.canRequestAds)"
+            )
+            #endif
             interstitial = nil
             clearAppOpen()
             appOpenOpportunityPending = false
@@ -119,9 +145,15 @@ final class AdsManager: NSObject, ObservableObject {
         guard isReady else { return }
         guard settings.adsEnabled, !settings.activeAppOpenUnitId.isEmpty else { return }
         // Never request App Open while / right after a full-screen ad (including interstitial).
-        guard !shouldSuppressIntroResume else { return }
+        guard !shouldSuppressIntroResume else {
+            logAppOpen("skip resume full screen session active")
+            return
+        }
         // Intro owns this resume when enabled — App Open runs after intro finishes.
-        if IntroStore.shouldShow(using: settings) { return }
+        if IntroStore.shouldShow(using: settings) {
+            logAppOpen("skip resume introEnabled=true")
+            return
+        }
 
         let backgroundedAt = wentToBackgroundAt
         wentToBackgroundAt = nil
@@ -222,10 +254,25 @@ final class AdsManager: NSObject, ObservableObject {
 
     /// Marks a single opportunity; present runs at most once until next open/resume.
     private func requestAppOpenOnce() {
-        guard settings.adsEnabled else { return }
-        guard !settings.activeAppOpenUnitId.isEmpty else { return }
-        guard !isShowingFullScreen else { return }
-        guard !appOpenOpportunityPending else { return }
+        logAppOpen(
+            "eligibility ad=\(appOpenAd != nil) enabled=\(settings.adsEnabled) mode=\(settings.adsMode.rawValue) unitEmpty=\(settings.activeAppOpenUnitId.isEmpty) canRequestAds=\(ConsentManager.shared.canRequestAds) showingFullScreen=\(isShowingFullScreen) pending=\(appOpenOpportunityPending) introEnabled=\(IntroStore.shouldShow(using: settings))"
+        )
+        guard settings.adsEnabled else {
+            logAppOpen("skip adsEnabled=false")
+            return
+        }
+        guard !settings.activeAppOpenUnitId.isEmpty else {
+            logAppOpen("skip unit empty")
+            return
+        }
+        guard !isShowingFullScreen else {
+            logAppOpen("skip already showing full screen")
+            return
+        }
+        guard !appOpenOpportunityPending else {
+            logAppOpen("skip opportunity already pending")
+            return
+        }
 
         appOpenOpportunityPending = true
         appOpenPresenterRetries = 0
@@ -233,24 +280,34 @@ final class AdsManager: NSObject, ObservableObject {
     }
 
     private func presentPendingAppOpenIfPossible(from root: UIViewController? = nil) {
-        guard appOpenOpportunityPending else { return }
+        guard appOpenOpportunityPending else {
+            logAppOpen("skip present pending=false")
+            return
+        }
         guard settings.adsEnabled, !settings.activeAppOpenUnitId.isEmpty else {
+            logAppOpen("skip present enabled=\(settings.adsEnabled) unitEmpty=\(settings.activeAppOpenUnitId.isEmpty)")
             appOpenOpportunityPending = false
             return
         }
-        guard !isShowingFullScreen else { return }
+        guard !isShowingFullScreen else {
+            logAppOpen("skip present showingFullScreen=true pending stays true")
+            return
+        }
 
         guard isAppOpenFresh, let appOpenAd else {
+            logAppOpen("skip present ad missing or stale, reloading thenPresent=true")
             Task { await loadAppOpen(thenPresentPending: true) }
             return
         }
 
         guard let presenter = root ?? AdsPresenter.topViewController() else {
             guard appOpenPresenterRetries < 16 else {
+                logAppOpen("skip present no view controller after 16 retries")
                 appOpenOpportunityPending = false
                 return
             }
             appOpenPresenterRetries += 1
+            logAppOpen("skip present no view controller retry=\(appOpenPresenterRetries)")
             Task { @MainActor in
                 try? await Task.sleep(nanoseconds: 400_000_000)
                 self.presentPendingAppOpenIfPossible()
@@ -258,11 +315,20 @@ final class AdsManager: NSObject, ObservableObject {
             return
         }
 
+        logAppOpen(
+            "present() vc=\(type(of: presenter)) presenting=\(presenter.presentedViewController != nil) window=\(presenter.viewIfLoaded?.window != nil)"
+        )
         // Consume opportunity before present → no second show.
         appOpenOpportunityPending = false
         appOpenPresenterRetries = 0
         beginFullScreenAdSession()
         appOpenAd.present(fromRootViewController: presenter)
+    }
+
+    private func logAppOpen(_ message: String) {
+        #if DEBUG
+        print("[Ads] AppOpen \(message)")
+        #endif
     }
 
     private var isAppOpenFresh: Bool {
@@ -276,8 +342,15 @@ final class AdsManager: NSObject, ObservableObject {
     }
 
     private func loadInterstitial() async {
+        guard ConsentManager.shared.canRequestAds, Self.hasAdMobApplicationID else {
+            interstitial = nil
+            return
+        }
         let unitId = settings.activeInterstitialUnitId
         guard !unitId.isEmpty else {
+            #if DEBUG
+            print("[Ads] Interstitial unit empty")
+            #endif
             interstitial = nil
             return
         }
@@ -288,8 +361,16 @@ final class AdsManager: NSObject, ObservableObject {
     }
 
     private func loadAppOpen(thenPresentPending: Bool = false) async {
+        guard ConsentManager.shared.canRequestAds, Self.hasAdMobApplicationID else {
+            clearAppOpen()
+            appOpenOpportunityPending = false
+            return
+        }
         let unitId = settings.activeAppOpenUnitId
         guard !unitId.isEmpty else {
+            #if DEBUG
+            print("[Ads] AppOpen unit empty")
+            #endif
             clearAppOpen()
             appOpenOpportunityPending = false
             return
@@ -299,6 +380,9 @@ final class AdsManager: NSObject, ObservableObject {
         ad?.fullScreenContentDelegate = self
         appOpenAd = ad
         appOpenLoadTime = ad == nil ? nil : Date()
+        logAppOpen(
+            "load complete ad=\(appOpenAd != nil) fresh=\(isAppOpenFresh) pending=\(appOpenOpportunityPending) thenPresent=\(thenPresentPending) enabled=\(settings.adsEnabled) mode=\(settings.adsMode.rawValue) canRequestAds=\(ConsentManager.shared.canRequestAds)"
+        )
 
         guard thenPresentPending else { return }
         if ad == nil {
@@ -307,6 +391,21 @@ final class AdsManager: NSObject, ObservableObject {
         }
         try? await Task.sleep(nanoseconds: 200_000_000)
         presentPendingAppOpenIfPossible()
+    }
+
+    /// Release has no production AdMob App ID. Starting the SDK without one crashes.
+    private nonisolated static var hasAdMobApplicationID: Bool {
+        let raw = Bundle.main.object(forInfoDictionaryKey: "GADApplicationIdentifier") as? String
+        return !(raw?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
+    }
+
+    /// Marks this iPhone as an AdMob test device in Debug only. Production unit IDs stay unchanged.
+    private nonisolated static func configureDebugTestDevice() {
+        #if DEBUG
+        GADMobileAds.sharedInstance().requestConfiguration.testDeviceIdentifiers = [
+            "587bb9bac418aff0cedb745e2769b4c0"
+        ]
+        #endif
     }
 
     private nonisolated static func startMobileAds() async {
@@ -319,7 +418,8 @@ final class AdsManager: NSObject, ObservableObject {
 
     private nonisolated static func loadInterstitialAd(unitId: String) async -> GADInterstitialAd? {
         await withCheckedContinuation { continuation in
-            GADInterstitialAd.load(withAdUnitID: unitId, request: GADRequest()) { ad, _ in
+            GADInterstitialAd.load(withAdUnitID: unitId, request: GADRequest()) { ad, error in
+                logLoadResult(type: "Interstitial", unitId: unitId, ad: ad, error: error)
                 continuation.resume(returning: ad)
             }
         }
@@ -327,16 +427,46 @@ final class AdsManager: NSObject, ObservableObject {
 
     private nonisolated static func loadAppOpenAd(unitId: String) async -> GADAppOpenAd? {
         await withCheckedContinuation { continuation in
-            GADAppOpenAd.load(withAdUnitID: unitId, request: GADRequest()) { ad, _ in
+            GADAppOpenAd.load(withAdUnitID: unitId, request: GADRequest()) { ad, error in
+                logLoadResult(type: "AppOpen", unitId: unitId, ad: ad, error: error)
                 continuation.resume(returning: ad)
             }
         }
+    }
+
+    private nonisolated static func logLoadResult(
+        type: String,
+        unitId: String,
+        ad: (any GADFullScreenPresentingAd)?,
+        error: Error?
+    ) {
+        #if DEBUG
+        if error == nil, let ad {
+            let responseInfo = (ad as? GADInterstitialAd)?.responseInfo
+                ?? (ad as? GADAppOpenAd)?.responseInfo
+            print("[Ads] Loaded type=\(type) unit=\(unitId) responseInfo=\(String(describing: responseInfo))")
+            return
+        }
+        let nsError = error as NSError?
+        let responseInfo = nsError?.userInfo[GADErrorUserInfoKeyResponseInfo]
+        print(
+            "[Ads] Load failed type=\(type) unit=\(unitId) domain=\(nsError?.domain ?? "nil") code=\(nsError.map { String($0.code) } ?? "nil") description=\(nsError?.localizedDescription ?? "nil") userInfo=\(String(describing: nsError?.userInfo ?? [:])) responseInfo=\(String(describing: responseInfo))"
+        )
+        #else
+        _ = type
+        _ = unitId
+        _ = ad
+        _ = error
+        #endif
     }
 }
 
 extension AdsManager: GADFullScreenContentDelegate {
     nonisolated func adWillPresentFullScreenContent(_ ad: any GADFullScreenPresentingAd) {
         Task { @MainActor [weak self] in
+            if ad is GADAppOpenAd {
+                self?.logAppOpen("willPresent")
+            }
             self?.beginFullScreenAdSession()
         }
     }
@@ -344,6 +474,9 @@ extension AdsManager: GADFullScreenContentDelegate {
     nonisolated func adDidDismissFullScreenContent(_ ad: any GADFullScreenPresentingAd) {
         Task { @MainActor [weak self] in
             guard let self else { return }
+            if ad is GADAppOpenAd {
+                self.logAppOpen("dismissed")
+            }
             self.endFullScreenAdSession()
             if ad is GADAppOpenAd {
                 self.clearAppOpen()
@@ -361,6 +494,12 @@ extension AdsManager: GADFullScreenContentDelegate {
     ) {
         Task { @MainActor [weak self] in
             guard let self else { return }
+            if ad is GADAppOpenAd {
+                let nsError = error as NSError
+                self.logAppOpen(
+                    "present failed domain=\(nsError.domain) code=\(nsError.code) description=\(nsError.localizedDescription) userInfo=\(nsError.userInfo)"
+                )
+            }
             self.endFullScreenAdSession()
             self.appOpenOpportunityPending = false
             if ad is GADAppOpenAd {

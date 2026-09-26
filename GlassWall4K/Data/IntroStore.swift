@@ -6,7 +6,7 @@
 import Foundation
 
 enum IntroStore {
-    /// Show on cold start and when leaving the app then coming back.
+    /// A real process launch. Background return is not a new launch.
     static func shouldShow(using settings: AppAdSettings) -> Bool {
         settings.introEnabled
     }
